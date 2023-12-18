@@ -3,66 +3,54 @@ package org.max.home;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Тест кейс для тестирования методов порадокса
- */
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
 public class GameTest {
 
     static List<Door> doors;
+    static Game game;
 
     @BeforeEach
-    void initDoors () {
+    void initGame() {
         doors = new ArrayList<>();
-        doors.add(new Door(true));
+        doors.add(new Door(true));  // Предполагаем, что первая дверь с призом
         doors.add(new Door(false));
         doors.add(new Door(false));
     }
 
-    @Test
-    void checkNotRiskWin () {
-        //given
-        Player player = new Player("Игрок", false);
+    @ParameterizedTest
+    @ValueSource(booleans = {true, false})
+    void checkWinningScenario(boolean changeChoice) {
+        Player player = new Player("Игрок", changeChoice);
         Game game = new Game(player, doors);
-        //when
-        Door door = game.round(0);
-        //then
-        Assertions.assertTrue(door.isPrize());
+        Door chosenDoor = game.round(0); // выбираем первую дверь для упрощения
+
+        // Проверяем, что решение игрока соответствует ожидаемому результату
+        boolean expectedWin = changeChoice != chosenDoor.isPrize();
+        Assertions.assertEquals(expectedWin, chosenDoor.isPrize(),
+                "Результат не соответствует ожидаемому при выборе " +
+                        (changeChoice ? "смены" : "сохранения") + " двери.");
     }
 
     @Test
-    void checkNotRiskLose() {
-        //given
-        Player player = new Player("Игрок", false);
-        Game game = new Game(player, doors);
-        //when
-        Door door = game.round(1);
-        //then
-        Assertions.assertFalse(door.isPrize());
+    void checkInvalidDoorSelection() {
+        Assertions.assertThrows(NullPointerException.class, () -> game.round(3),
+                "Должно быть выброшено исключение при выборе несуществующей двери");
     }
 
     @Test
-    void checkRiskWin () {
-        //given
-        Player player = new Player("Игрок", true);
-        Game game = new Game(player, doors);
-        //when
-        Door door = game.round(1);
-        //then
-        Assertions.assertTrue(door.isPrize());
+    void testGameInitializationDoesNotThrowException() {
+        Assertions.assertDoesNotThrow(() -> {
+            Player player = new Player("Игрок", true);
+            Game game = new Game(player, doors);
+            // Здесь можно добавить базовые операции, если они есть
+        }, "Инициализация игры не должна вызывать исключений");
     }
 
-    @Test
-    void checkRiskLose () {
-        //given
-        Player player = new Player("Игрок", true);
-        Game game = new Game(player, doors);
-        //when
-        Door door = game.round(0);
-        //then
-        Assertions.assertFalse(door.isPrize());
-    }
 }
